@@ -1,0 +1,50 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [        
+        {
+            "label": "transpile-like-the-wind",
+            "type": "npm",
+            "script": "build-win",
+            "group": "build",
+            "problemMatcher": []
+        }
+    ]
+}
+
+
+
+
+// {
+//     // See https://go.microsoft.com/fwlink/?LinkId=733558
+//     // for the documentation about the tasks.json format
+//     "version": "2.0.0",
+//     "tasks": [
+//         {
+//             "identifier": "vscode-typescript-compile",
+//             "type": "typescript",
+//             "tsconfig": "tsconfig.json",
+//             "problemMatcher": [
+//                 "$tsc"
+//             ],
+//             "group": {
+//                 "kind": "build",
+//                 "isDefault": true
+//             }
+//         }
+//     ]
+// }
+
+// {
+//     "label": "transpile-like-the-wind",
+//     "type": "typescript",
+//     "tsconfig": "tsconfig.json",
+//     "problemMatcher": [
+//         "$tsc"
+//     ],
+//     "group": {
+//         "kind": "build",
+//         "isDefault": true
+//     }
+// },

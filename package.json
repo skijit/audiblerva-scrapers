@@ -1,0 +1,28 @@
+{
+  "name": "musicalweb-capture",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "prebuild": "copyfiles -u 1 ./src/config.json ./dist",
+    "prebuild-win": "copyfiles -u 1 ./src/config.json ./dist",
+    "build-win": "node_modules/.bin/tsc.cmd -p ./tsconfig.json",
+    "build": "node_modules/.bin/tsc -p ./tsconfig.json",
+    "app": "node ./dist/app.js",
+    "debug": "node ./dist/app.js --inspect-brk=9229"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {    
+    "aws-sdk": ">= 2.0.9",
+    "axios": "^0.18.0",
+    "jquery": "^3.3.1",
+    "puppeteer": "^1.6.0",
+    "request-image-size": "^2.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^10.5.0",    
+    "copyfiles": "^1.2.0",
+    "typescript": "^2.8.4"
+  }
+}
