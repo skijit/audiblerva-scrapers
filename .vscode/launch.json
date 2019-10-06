@@ -11,7 +11,7 @@
       "request": "launch",
       "name": "Launch Program",
       "program": "${workspaceFolder}/src/app.ts",
-      "args": ["camel"],
+      "args": ["richmondShows"],
       "preLaunchTask": "transpile-like-the-wind",
       "outFiles": ["${workspaceFolder}/dist/**/*.js"]
     }

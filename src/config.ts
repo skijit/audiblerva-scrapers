@@ -15,7 +15,7 @@ const NEIGHBORHOODS = {
 }
 export const CFG = {
   development: {
-    debug: true,
+    debug: false,
     s3BucketName: 'musical.image-depot-1',
     persistImagesToAws: false
   },
@@ -82,8 +82,8 @@ export const CFG = {
       width : 682
     },    
     TENANT_NAME: "UR",
-    DAY_EVENT_SELECTOR : "div.entry-content div.list-view",
-    MAIN_PAGE_EVENT_SELECTOR: "div.list-view-item",    
+    DAY_EVENT_SELECTOR : ".entry-content .list-view",
+    MAIN_PAGE_EVENT_SELECTOR: ".list-view-item",    
     NAV_SETTINGS: {
       timeout: 300000,
       waitUntil: []
@@ -121,9 +121,9 @@ export const CFG = {
   tinPan : {
     PRIMARY_URI: "https://www.tinpanrva.com/calendar/",
     DOMAIN_NAME: "https://www.tinpanrva.com",
-    DAY_EVENT_SELECTOR : "div.entry-content table td.vevent.has-event",
-    MAIN_PAGE_EVENT_SELECTOR: "div.one-event",
-    DETAIL_CONTENT_SELECTOR : "div.entry-content div.event-detail",
+    DAY_EVENT_SELECTOR : ".entry-content table td.vevent.has-event",
+    MAIN_PAGE_EVENT_SELECTOR: ".one-event",
+    DETAIL_CONTENT_SELECTOR : ".entry-content .event-detail",
     CHANNEL_NAME: "The Tin Pan Website",
     CHANNEL_IMAGE: {
       src : "s3.amazonaws.com/musical.image-depot-1/default-channel-images/the-tin-pan.png",
@@ -197,8 +197,8 @@ export const CFG = {
       width : 225
     },            
     TENANT_NAME: "UR",
-    EVENT_CONTAINER_SELECTOR: "div.list-view",
-    DAY_EVENT_SELECTOR: "div.list-view-item",
+    EVENT_CONTAINER_SELECTOR: ".list-view",
+    DAY_EVENT_SELECTOR: ".list-view-item",
     NAV_SETTINGS: {
       timeout: 300000,
       waitUntil: []

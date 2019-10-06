@@ -114,3 +114,5 @@ Scrape / Capture Scripts
   - Implementation notes:
     - Camel, Broadberry, Tin Pan, RichmondShows has performer notes, but no general event desc
     - The national puts all it's interesting info in performer notes, so it's ok there's no event desc here    
+- Broken list (10/6/2019)
+  

@@ -405,8 +405,7 @@ export const parseRichmondShows = async(page: puppeteer.Page, curEvent:models.Ca
   
 }
 
-let parseRichmondShowsDetailPageBrowserFn = (detailCtx, curEvent: models.CaptureEvent, log: models.CaptureLog, deps : any): [models.CaptureLog, models.CaptureEvent] => {
-  debugger;
+let parseRichmondShowsDetailPageBrowserFn = (detailCtx, curEvent: models.CaptureEvent, log: models.CaptureLog, deps : any): [models.CaptureLog, models.CaptureEvent] => {  
   try
   {    
     curEvent.detailPageInnerText = document.body.innerText;
@@ -416,6 +415,60 @@ let parseRichmondShowsDetailPageBrowserFn = (detailCtx, curEvent: models.Capture
       log.errorLogs.push(`Could not find Detail Container Element for page: ${deps.curUri}`);
     }
     else if (detailCtx.length > 0) {
+      //start with the ld+json
+      let ldSuccess = false, ldEvent:any;
+      let ld = [...document.querySelectorAll('script[type="application/ld+json"]')].map(x => JSON.parse(x.innerText)).map(x => Array.isArray(x) ? x[0] : x);
+      if (ld && ld.length > 0 ) {
+        let ldEventArray = ld.filter(x => x['@type'] == 'Event');
+        if (ldEventArray && ldEventArray.length > 0) {
+          ldEvent = ldEventArray[0];
+          ldSuccess = true;
+        } 
+      }
+      if (!ldSuccess) {
+        throw new Error(`Could not extract json+ld event data (@Type=='Event')`);
+      } 
+
+      if (ldEvent.startDate) {
+        curEvent.startDt = new Date(ldEvent.startDate).toISOString();
+      } else {
+        throw new Error(`Could not extract startDt from json+ld event data (@Type=='Event')`);
+      }
+
+      if (ldEvent.endDate) {
+        curEvent.endDt = new Date(ldEvent.endDate).toISOString();
+      } else {
+        log.warningLogs.push(`No endDt from json+ld for page: ${deps.curUri}`);
+      }
+
+      if (ldEvent.image) {        
+        curEvent.eventImageUris.push(ldEvent.image);            
+      } else {
+        log.warningLogs.push(`No main image found from json+ld for page: ${deps.curUri}`);
+      }
+
+      if (ldEvent.ageRange && ldEvent.typicalAgeRange === "all_ages") {
+        curEvent.minAge = 0;
+      }
+
+      if (ldEvent.offers && ldEvent.offers.url && !curEvent.ticketUri) {
+        curEvent.ticketUri = ldEvent.offers.url;
+      }
+
+      if (ldEvent.location && ldEvent.location.name && !curEvent.venueName) {
+        curEvent.venueName = ldEvent.location.name;
+      }
+
+      if ((!curEvent.venueAddressLines || curEvent.venueAddressLines.length === 0) && ldEvent.location && ldEvent.location["@type"]=== 'Place') {
+        curEvent.venueAddressLines.push(ldEvent.location.streetAddress as string, ldEvent.location.addressLocality  as string, ldEvent.location.addressRegion as string, ldEvent.location.postalCode as string)
+      }
+      
+      if (ldEvent.doorTime) {
+        let doorTime = new Date(ldEvent.doorTime);
+        curEvent.doorTimeHours = doorTime.getHours();
+        curEvent.doorTimeMin = doorTime.getMilliseconds();
+      }
+      
       let curCtx = detailCtx[0];
 
       //promoter, if exists
@@ -432,36 +485,38 @@ let parseRichmondShowsDetailPageBrowserFn = (detailCtx, curEvent: models.Capture
 
       //start date and time
       let startDtElem = curCtx.querySelector('span.start.dtstart span.value-title');
-      let actualStartDt = new Date(startDtElem.getAttribute('title'));
-      if (startDtElem) {
-        curEvent.startDt = actualStartDt.toISOString();
-      } else {
-        log.errorLogs.push(`Could not find start date from span.start.dtstart span.value-title on page: ${deps.curUri}`);
+      if (startDtElem && !curEvent.startDt) {
+        let actualStartDt = new Date(startDtElem.getAttribute('title'));
+        if (startDtElem) {
+          curEvent.startDt = actualStartDt.toISOString();
+        } else {
+          log.errorLogs.push(`Could not find start date from span.start.dtstart span.value-title on page: ${deps.curUri}`);
+        }
       }
 
       //per the policy stated here https://www.thecamel.org/faq/
       //unless otherwise noted, sun-thurs is all ages, fri-sat are 18+
-      if (curEvent.minAge === null && actualStartDt.getDay() <= 4) {
-        curEvent.minAge = 0;
-      } else if (curEvent.minAge === null && actualStartDt.getDay() > 4) {
-        curEvent.minAge = 18;
-      }
+      // if (curEvent.minAge === null && actualStartDt.getDay() <= 4) {
+      //   curEvent.minAge = 0;
+      // } else if (curEvent.minAge === null && actualStartDt.getDay() > 4) {
+      //   curEvent.minAge = 18;
+      // }
       
-      //get main image
-      let imgItem = curCtx.querySelector("img:first-child");
-      if (imgItem)
-      {
-        let imageUri = imgItem.getAttribute("src").trim();  
-        if (curEvent.eventImageUris.indexOf(imageUri) === -1) {
-          curEvent.eventImageUris.push(imageUri);
-        }    
-      } else {
-        log.warningLogs.push(`Expecting first child of div.event-detail to be an image for page: ${deps.curUri}`);
-      }
+      //get main image (first from ld)
+      // let imgItem = curCtx.querySelector("img:first-child");
+      // if (imgItem)
+      // {
+      //   let imageUri = imgItem.getAttribute("src").trim();  
+      //   if (curEvent.eventImageUris.indexOf(imageUri) === -1) {
+      //     curEvent.eventImageUris.push(imageUri);
+      //   }    
+      // } else {
+      //   log.warningLogs.push(`Expecting first child of div.event-detail to be an image for page: ${deps.curUri}`);
+      // }
 
       //name of main performer
       let mainPerformer :string = '';
-      let mainPermElem = curCtx.querySelector('div.event-info h1.headliners.summary');
+      let mainPermElem = curCtx.querySelector('.event-info .headliners');
       if (mainPermElem) {
         mainPerformer = mainPermElem.innerText.trim();
       } else {
@@ -478,7 +533,7 @@ let parseRichmondShowsDetailPageBrowserFn = (detailCtx, curEvent: models.Capture
       }
 
       if (!curEvent.ticketCostRaw) {
-        let tixPriceElem = curCtx.querySelector('div.ticket-price h3.price-range');
+        let tixPriceElem = curCtx.querySelector('.ticket-price .price-range');
         if (tixPriceElem) {
           let rawTixPriceTxt = tixPriceElem.innerText.trim();
           curEvent.ticketCostRaw = rawTixPriceTxt;
@@ -488,28 +543,28 @@ let parseRichmondShowsDetailPageBrowserFn = (detailCtx, curEvent: models.Capture
         }
       }
       
-      let fbShareElem = curCtx.querySelector('div.share-events.share-plus div.share-facebook a:first-child');
+      let fbShareElem = curCtx.querySelector('.share-events.share-plus .share-facebook a:first-child');
       if (fbShareElem) {
         curEvent.facebookShareUri = fbShareElem.getAttribute("href");
       } else {
-        log.infoLogs.push(`No FB Share info found in div.share-events.share-plus div.share-facebook a:first-child for page: ${deps.curUri}`);
+        log.infoLogs.push(`No FB Share info found in .share-events.share-plus .share-facebook a:first-child for page: ${deps.curUri}`);
       }
 
-      let twitterShareElem = curCtx.querySelector('div.share-events.share-plus div.share-twitter a:first-child');
+      let twitterShareElem = curCtx.querySelector('.share-events.share-plus .share-twitter a:first-child');
       if (twitterShareElem) {
         curEvent.twitterShareUri = twitterShareElem.getAttribute("href");
       } else {
-        log.infoLogs.push(`No Twitter Share info found in div.share-events.share-plus div.share-twitter a:first-child for page: ${deps.curUri}`);
+        log.infoLogs.push(`No Twitter Share info found in .share-events.share-plus .share-twitter a:first-child for page: ${deps.curUri}`);
       }
 
-      let iCalElem = curCtx.querySelector('div.ical-sync a');
+      let iCalElem = curCtx.querySelector('.ical-sync a');
       if (iCalElem) {
         curEvent.iCalUri = iCalElem.getAttribute("href");
       } else {
         log.infoLogs.push(`No iCal info found in  for page: ${deps.curUri}`);
       }
 
-      let gCalElem = curCtx.querySelector('div.gcal-sync a');
+      let gCalElem = curCtx.querySelector('.gcal-sync a');
       if (gCalElem) {
         curEvent.gCalUri = gCalElem.getAttribute("href");
       } else {

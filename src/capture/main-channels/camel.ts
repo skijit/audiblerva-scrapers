@@ -71,8 +71,7 @@ export async function main() {
     log = await screenshots.doScreenshot(log, page, channelCfg.PRIMARY_URI, envCfg.s3BucketName);
     
     //Walk through each event in the results and navigate to its detail page    
-    // for(let i = 0; results.events.length > 0 && i < results.events.length; i++) {
-    for(let i = 0;  i < 1; i++) {
+    for(let i = 0; results.events.length > 0 && i < results.events.length; i++) {    
       let curEvent = results.events[i];
             
       curEvent.location = { type: "Point", coordinates: channelCfg.COORDINATES};
