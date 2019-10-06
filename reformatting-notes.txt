@@ -1,0 +1,173 @@
+- consumers of parseRichmondShows
+  - camel: https://www.thecamel.org/e/bachelor-boys-band-showcase-74630260117/
+  - broadberry: https://www.thebroadberry.com/e/jon-worthy-w-bordertown-and-good-stereo-70160555109/
+  - tin-pan: https://www.tinpanrva.com/e/ellis-marsalis-with-jae-sinnett-terry-burrell-73585992685/   
+  - richmond-shows: https://www.richmondshows.com/e/pink-turns-blue-w-true-body-and-serqet-68633501651/
+
+- for example on parsing ld+json, see richmond symphony
+- fields include:
+  - startDate (camel, broadberry, tin-pan, richmondshows)
+  - endDate (camel, tin-pan, richmondshows)
+  - image (camel, broadberry, tin-pan, richmondshows)
+  - ageRange (camel, broadberyy, tin-pan, richmondshows) (see the format)
+  - ticketUri (camel, broadberry, tin-pan, richmondshows)
+  - location (camel, broadberry, tin-pan, richmondshows)
+    - see field - which is nice for channels that sometime leave this out (e.g. broadberry)
+  - doortime (tin-pan, richmondshows)
+  
+- camel fields raw:
+  {
+  "@context": "http://schema.org",
+  "@type": "Event",
+  "name": "Bachelor Boys Band Showcase",
+  "image": "https://img.evbuc.com/https%3A%2F%2Fcdn.evbuc.com%2Fimages%2F74779667%2F311838777560%2F1%2Foriginal.20190929-214635?auto=compress&s=5b2a1e167c9f96325e3a7609b0f88732",
+  "url": "https://www.thecamel.org/e/bachelor-boys-band-showcase-74630260117/",
+  "startDate": "2019-10-08T18:00:00-04:00",
+  "doorTime": "2019-10-08T00:00:00-04:00",
+  "endDate": "2019-10-08T20:00:00-04:00",
+  "description": ".",
+  "typicalAgeRange": "all_ages",
+  "location": {
+    "@type": "Place",
+    "name": "The Camel",
+    "sameAs": "",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "1621 W Broad St",
+      "addressLocality": "Richmond",
+      "addressRegion": "VA",
+      "postalCode": "",
+      "addressCountry": "US"
+    }
+  },
+  "offers": {
+    "@type": "AggregateOffer",
+    "name": "Ticket",
+    "category": "primary",
+    "lowPrice": "0.00",
+    "highPrice": "0.00",
+    "priceCurrency": "USD",
+    "availability": "InStock",
+    "url": "https://www.eventbrite.com/checkout-external?eid=74630260117",
+    "validFrom": "2008-08-27T22:00:00-04:00"
+  },
+  "performer": []
+}
+
+- broadberry:
+{
+    "@context": "http://schema.org",
+    "@type": "Event",
+    "name": "Jon Worthy w/ Bordertown and Good Stereo",
+    "image": "https://img.evbuc.com/https%3A%2F%2Fcdn.evbuc.com%2Fimages%2F69562923%2F311838791658%2F1%2Foriginal.20190822-162059?auto=compress&s=49b5a723e9301154dd450af07036511c",
+    "url": "https://www.thebroadberry.com/e/jon-worthy-w-bordertown-and-good-stereo-70160555109/",
+    "startDate": "2019-10-06T20:00:00-04:00",
+    "doorTime": "2019-10-06T19:00:00-04:00",
+    "endDate": "2019-10-06T23:00:00-04:00",
+    "description": ".",
+    "typicalAgeRange": "all_ages",
+    "location": {
+      "@type": "Place",
+      "name": "Richmond Music Hall @ Capital Ale House",
+      "sameAs": "",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "623 E Main St",
+        "addressLocality": "Richmond",
+        "addressRegion": "VA",
+        "postalCode": "23219",
+        "addressCountry": "US"
+      }
+    },
+    "offers": {
+      "@type": "AggregateOffer",
+      "name": "Ticket",
+      "category": "primary",
+      "lowPrice": "10.00",
+      "highPrice": "10.00",
+      "priceCurrency": "USD",
+      "availability": "InStock",
+      "url": "https://www.eventbrite.com/checkout-external?eid=70160555109",
+      "validFrom": "2019-08-23T12:00:00-04:00"
+    },
+    "performer": []
+  }
+- tin pan[
+  {
+    "@context": "http://schema.org",
+    "@type": "Event",
+    "name": "Ellis Marsalis with Jae Sinnett & Terry Burrell",
+    "image": "https://img.evbuc.com/https%3A%2F%2Fcdn.evbuc.com%2Fimages%2F73700809%2F173618512417%2F1%2Foriginal.20190920-155820?auto=compress&s=9cbef9a0adb6e228b9a5a231ec616f82",
+    "url": "https://www.tinpanrva.com/e/ellis-marsalis-with-jae-sinnett-terry-burrell-73585992685/",
+    "startDate": "2019-10-07T20:00:00-04:00",
+    "doorTime": "2019-10-07T18:00:00-04:00",
+    "endDate": "2019-10-07T23:59:00-04:00",
+    "description": "Ellis Marsalis with Jae Sinnett & Terry Burrell appearing at The Tin Pan in Richmond, VA",
+    "typicalAgeRange": "all_ages",
+    "location": {
+      "@type": "Place",
+      "name": "The Tin Pan",
+      "sameAs": "",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "8982 Quioccasin Rd",
+        "addressLocality": "Richmond",
+        "addressRegion": "VA",
+        "postalCode": "23229",
+        "addressCountry": "US"
+      }
+    },
+    "offers": {
+      "@type": "AggregateOffer",
+      "name": "Ticket",
+      "category": "primary",
+      "lowPrice": "40.00",
+      "highPrice": "40.00",
+      "priceCurrency": "USD",
+      "availability": "InStock",
+      "url": "https://www.eventbrite.com/checkout-external?eid=73585992685",
+      "validFrom": "2019-07-30T16:58:00-04:00"
+    },
+    "performer": []
+  }
+]
+- richmondshows
+[
+  {
+    "@context": "http://schema.org",
+    "@type": "Event",
+    "name": "Pink Turns Blue w/ True Body and Serqet",
+    "image": "https://img.evbuc.com/https%3A%2F%2Fcdn.evbuc.com%2Fimages%2F75231635%2F315932198322%2F1%2Foriginal.20191002-173156?auto=compress&s=c7da3bf9951f663f46851d25240fd0ef",
+    "url": "https://www.richmondshows.com/e/pink-turns-blue-w-true-body-and-serqet-68633501651/",
+    "startDate": "2019-10-06T20:30:00-04:00",
+    "doorTime": "2019-10-06T19:30:00-04:00",
+    "endDate": "2019-10-07T02:00:00-04:00",
+    "description": ".",
+    "typicalAgeRange": "all_ages",
+    "location": {
+      "@type": "Place",
+      "name": "The Camel",
+      "sameAs": "",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "1621 West Broad Street",
+        "addressLocality": "Richmond",
+        "addressRegion": "VA",
+        "postalCode": "",
+        "addressCountry": "US"
+      }
+    },
+    "offers": {
+      "@type": "AggregateOffer",
+      "name": "Ticket",
+      "category": "primary",
+      "lowPrice": "15.00",
+      "highPrice": "15.00",
+      "priceCurrency": "USD",
+      "availability": "InStock",
+      "url": "https://www.eventbrite.com/checkout-external?eid=68633501651",
+      "validFrom": "2018-12-05T12:00:00-05:00"
+    },
+    "performer": []
+  }
+]

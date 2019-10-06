@@ -106,8 +106,8 @@ export const CFG = {
     },       
     TENANT_NAME: "UR",
     DAY_EVENT_SELECTOR : "#eventsList",
-    MAIN_PAGE_EVENT_SELECTOR: "div.entry",
-    DETAIL_CONTENT_SELECTOR : "div.event_detail",
+    MAIN_PAGE_EVENT_SELECTOR: ".entry",
+    DETAIL_CONTENT_SELECTOR : ".event_detail",
     VENUE_ADDRESS: ["708 E Broad St", "Richmond, VA 23219"],
     VENUE_PHONENUM: "804-612-1900",
     COORDINATES: [-77.4351138,37.5419945], //lng,lat
