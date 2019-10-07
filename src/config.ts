@@ -33,7 +33,7 @@ export const CFG = {
     CHANNEL_NAME: "The Camel Website",
     CHANNEL_IMAGE: {
       src : "s3.amazonaws.com/musical.image-depot-1/default-channel-images/Camel-Logo-v3.jpg",
-      key : "default-channel-images/Camel-Logo-v3.jpg",
+      key : "default-channel-images/Camel-Logo-v2.jpg",
       type : "jpg",
       height : 460,
       width : 593
