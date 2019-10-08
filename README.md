@@ -115,4 +115,75 @@ Scrape / Capture Scripts
     - Camel, Broadberry, Tin Pan, RichmondShows has performer notes, but no general event desc
     - The national puts all it's interesting info in performer notes, so it's ok there's no event desc here    
 - Broken list (10/6/2019)
-  
+
+## Style Weekly Notes
+
+- Main Page: `https://www.styleweekly.com/richmond/EventSearch?eventCategory=1400273&sortType=date`
+- Pagination works with get: `https://www.styleweekly.com/richmond/EventSearch?eventCategory=1400273&sortType=date&page={page}`
+
+
+- Main page selectors (TODO)
+  - Get each events: `div.EventListing`
+    - Event Detail Page link: `h3.a:href`
+    - neighborhood tag! `div.descripTxt span.locationRegion a:text` 
+    - contact phone number: `div.descripTxt.longDescrip span.locationPhone.innerText`
+      `[...document.querySelectorAll('div.descripTxt.longDescrip span.locationPhone')].forEach(x => console.log(x.innerText))`
+    - venue link/info: 
+      - `[...document.querySelectorAll("div:not([class='longDescrip']).descripTxt span.locationLabel a")].forEach(x => console.log(x.innerText))`
+      - `[...document.querySelectorAll("div:not([class='longDescrip']).descripTxt span.locationLabel a")].forEach(x => console.log(x.getAttribute("href")))`
+    - date/regular-event-identifier: `span.altTimeDisplay`
+      - How to handle regular events: TODO?
+      - On the detail page, the dates are in the past
+
+
+  - Event Details
+    - Other data points:
+      - Price: `document.querySelectorAll('span.eventInfo.eventPrice')[0].innerText` (sometimes?)
+    - ld+json: `document.querySelectorAll('script[type="application/ld+json"]')[0].textContent`
+      - No timezone
+      - urls are overescaped
+    - Format
+    ```
+    {
+      "name": "Gull, Dumb Waiter, Imelda Marcos and  Jono Stewart",
+        "image": {
+          "url": "https://media2.fdncms.com/styleweekly/imager/u/original/15096976/imelda.jpg",
+          "width": 640,
+          "height": 960,
+          "@type": "ImageObject"
+        },
+      "startDate" : "2019-10-08T19:00:00",
+        "endDate" : "2019-10-08T23:00:00",          
+        "url" : "https:\/\/www.facebook.com\/events\/2093602540943012\/",
+      "location" : {
+        "sameAs" : "https:\/\/www.styleweekly.com\/richmond\/gallery5\/Location?oid=1392088",
+        "name" : "Gallery5",
+        "address" : "200 W. Marshall St., Richmond, Va.",
+        "@type" : "Place"
+      },
+      "@context": "https://schema.org",
+      "@type": "Event"
+    }
+
+    {
+      "name": "The Bopst Show",
+        "description": "The critically acclaimed music radio show held by artist, musician, writer, DJ and founding member of influential Richmond bands Gwar, Alter Natives and Mao Tse Helen, Chris Bopst.",
+        "image": {
+          "url": "https:\/\/media2.fdncms.com\/styleweekly\/imager\/u\/original\/9191523\/podcast.jpg",
+          "width": 1500,
+          "height": 1491,
+          "@type": "ImageObject"
+        },          
+      "startDate" : "2018-05-28T13:00:00",
+        "endDate" : "2018-05-28T15:00:00",
+        "url" : "http:\/\/www.richmondsoulradio.com\/",
+      "location" : {
+        "sameAs" : "https:\/\/www.styleweekly.com\/richmond\/wclm-1450-am\/Location?oid=2942975",
+        "name" : "WCLM 1450 AM",
+        "address" : "3203 Hull St., Richmond, Va. 23224",
+        "@type" : "Place"
+      },
+      "@context": "https://schema.org",
+      "@type": "Event"
+    }
+    ```
