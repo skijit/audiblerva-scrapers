@@ -121,22 +121,27 @@ Scrape / Capture Scripts
 - Main Page: `https://www.styleweekly.com/richmond/EventSearch?eventCategory=1400273&sortType=date`
 - Pagination works with get: `https://www.styleweekly.com/richmond/EventSearch?eventCategory=1400273&sortType=date&page={page}`
 
+- Special handlers:
+  - unescaping urls
+  - parsing/identifying recurrent events (need more examples)
+  - add timezone info to dates in ld+json
 
-- Main page selectors (TODO)
+- Main page selectors 
   - Get each events: `div.EventListing`
-    - Event Detail Page link: `h3.a:href`
-    - neighborhood tag! `div.descripTxt span.locationRegion a:text` 
-    - contact phone number: `div.descripTxt.longDescrip span.locationPhone.innerText`
+    - ld+json is the first element after the event listing - see event details below!
+    - Event Detail Page link: `[...document.querySelectorAll('div.listing > h3 > a')].forEach(x => console.log(x.getAttribute('href')))`
+    - neighborhood tag! `[...document.querySelectorAll('div.listing div.descripTxt span.locationRegion a')].forEach(x => console.log(x.innerText))` 
+    - contact phone number: `[...document.querySelectorAll('div.listing div.descripTxt.longDescrip span.locationPhone')].forEach(x => console.log(x.innerText))`
       `[...document.querySelectorAll('div.descripTxt.longDescrip span.locationPhone')].forEach(x => console.log(x.innerText))`
     - venue link/info: 
       - `[...document.querySelectorAll("div:not([class='longDescrip']).descripTxt span.locationLabel a")].forEach(x => console.log(x.innerText))`
       - `[...document.querySelectorAll("div:not([class='longDescrip']).descripTxt span.locationLabel a")].forEach(x => console.log(x.getAttribute("href")))`
     - date/regular-event-identifier: `span.altTimeDisplay`
-      - How to handle regular events: TODO?
-      - On the detail page, the dates are in the past
+      - How to handle regular events: have a configuration variable that says how many events to generate- should be roughly equivalent to scraping interval
+      - Note- On the detail page, the dates are in the past
 
 
-  - Event Details
+  - Event Details Page
     - Other data points:
       - Price: `document.querySelectorAll('span.eventInfo.eventPrice')[0].innerText` (sometimes?)
     - ld+json: `document.querySelectorAll('script[type="application/ld+json"]')[0].textContent`
