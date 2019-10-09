@@ -7,6 +7,7 @@ import * as csc from "./capture/main-channels/cary-st-cafe";
 import * as rs from "./capture/main-channels/richmond-symphony";
 import * as rvas from "./capture/main-channels/richmond-shows";
 import * as eb from "./capture/main-channels/event-brite";
+import * as sw from "./capture/main-channels/style-weekly";
 
 (async () => {
     let runAll : boolean = process.argv.length <= 2;
@@ -21,6 +22,11 @@ import * as eb from "./capture/main-channels/event-brite";
     //     await sm.main()
     //     console.log('i finished strange matter');
     // } 
+
+    if (evalRun(sw.CAPTURE_KEY)) {
+      await sw.main()
+      console.log('i finished style weekly');
+    } 
 
     if (evalRun(bb.CAPTURE_KEY)) {
       await bb.main()

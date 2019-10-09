@@ -1,7 +1,9 @@
+import { doScreenshot } from './../core/screenshots';
 declare const injectedHelpers : any, document: any;
 
 import {puppeteer, puppeteerUtils, models, captureHelpers, parsers, domUtils } from '../barrel';
 import { CapturePerformer } from '../core/models';
+import { runInNewContext } from 'vm';
 
 export const outputLog = (log: models.CaptureLog) => {    
     console.log(`Capture Log: tenant: ${log.tenantName}, channelName: ${log.channelName}, date: ${log.logDt}...`);
@@ -755,4 +757,195 @@ export const parseMainCamelPageBrowserFn = (daysCtx, results, log, deps): [model
   return [log, results];
 }
 
+
+export const parseStyleWeeklyPageBrowserFn = (daysCtx, results, log, deps): [models.CaptureLog, models.CaptureResults] => {  
+  try {    
+    //get each event
+    for (let eventItem of daysCtx||[]) {      
+            
+      let event = <models.CaptureEvent> {
+        tenantName: deps.channelCfg.TENANT_NAME,
+        channelName: deps.channelCfg.CHANNEL_NAME,
+        channelImage: deps.channelCfg.CHANNEL_IMAGE,
+        channelBaseUri: deps.channelCfg.PRIMARY_URI,
+        venueName: null,
+        performers: [] as models.CapturePerformer[],
+        eventImageUris: [] as string[],
+        eventUris: [] as models.UriType[],
+        miscDetail: [] as string[],
+        unparsedDetail: [] as string[],
+        ticketCost: [] as models.TicketAmtInfo[],
+        ticketCostRaw: null,
+        venueAddressLines: [],
+        venueContactInfo: [],
+        eventContactInfo: [] as models.ContactInfoItem[],
+        minAge: null,
+        rawDoorTimeStr: null,
+        doorTimeHours: null,
+        doorTimeMin: null,
+        promoters: [] as models.PromoterInfo[],
+        neighborhood: null
+      };
+      
+      //event title
+      let eventTitleElem = eventItem.querySelector("div.listing > h3 > a");
+      if (eventTitleElem) {
+        event.eventTitle = eventTitleElem.innerText;
+        event.eventUris.push({ uri: eventTitleElem.getAttribute('href'), isCaptureSrc: true })
+      } else {
+        log.errorLogs.push(`Cannot get event title for Style weekly page.`);     
+        continue;   
+      }
+
+      //neighborhood tag
+      let neighborhoodElem = eventItem.querySelector("div.listing div.descripTxt span.locationRegion a");
+      if (neighborhoodElem) {
+        event.neighborhood = neighborhoodElem.innerText;
+      }
+
+      //contact phone
+      let phoneElem = eventItem.querySelector("div.listing div.descripTxt.longDescrip span.locationPhone");
+      if (phoneElem) {
+        event.eventContactInfo.push({ itemType: deps.CONTACT_ITEM_TYPES.PHONE, item: phoneElem.innerText});
+      }
+
+      //get info from ld+json    
+      let ldSuccess = false, ldEvent:any;
+      let ld = [...eventItem.querySelectorAll('script[type="application/ld+json"]')].map(x => JSON.parse(x.innerText)).map(x => Array.isArray(x) ? x[0] : x);
+      if (ld && ld.length > 0 ) {
+        let ldEventArray = ld.filter(x => x['@type'] == 'Event');
+        if (ldEventArray && ldEventArray.length > 0) {
+          ldEvent = ldEventArray[0];
+          ldSuccess = true;
+        } 
+      }
+      if (!ldSuccess) {
+        log.errorLogs.push(`Could not extract json+ld event data (@Type=='Event'.`);     
+        continue;          
+      } 
+
+      //start dates do not have timezones, so we'll take default of EST which the server is in... (lame)
+      if (ldEvent.startDate) {
+        event.startDt = new Date(ldEvent.startDate).toISOString();
+      } else {
+        log.errorLogs.push(`Could not extract startDt from json+ld event data (@Type=='Event'.`);     
+        continue;          
+      }
+
+      if (ldEvent.endDate) {
+        event.endDt = new Date(ldEvent.endDate).toISOString();
+      } 
+
+      //if start date is in the past, assume this is because it's a regularly scheduled event which is hard-noped atm
+      let recordedStartDate = new Date(event.startDt);
+      let yesterday = new Date();
+      yesterday.setDate(new Date().getDate() - 1);
+      if (recordedStartDate < yesterday) {
+        log.infoLogs.push(`Event '${event.eventTitle}' appears to be recurrent - which are not currently handled`);     
+        continue;          
+      }
+
+      if (ldEvent.location && ldEvent.location.name) {
+        event.venueName = ldEvent.location.name;
+      }
+
+      if (ldEvent.location && ldEvent.location.address) {
+        event.venueAddressLines=ldEvent.location.address.split(',');
+      }
+
+      if (ldEvent.url) {
+        event.eventUris.push({ isCaptureSrc: false, uri: decodeURI(ldEvent.url) })
+      }
+
+      if (ldEvent.image && ldEvent.image.url) {
+        event.eventImageUris.push(decodeURI(ldEvent.image.url))
+      }
+
+      if (ldEvent.description) {
+        event.eventDesc = ldEvent.description;
+      }      
+
+      results.events.push(event);
+    } //event loop    
+  }
+  catch(e) {
+    log.errorLogs.push(`Capture Main Page Exception Thrown: ${e.message}`);
+  }
+
+  return [log, results];
+}
+
+export const parseStyleWeekly = async(page: puppeteer.Page, curEvent:models.CaptureEvent, log: models.CaptureLog, deps: any) : Promise<[models.CaptureLog, models.CaptureEvent]> => {    
+  try {
+  //browse to the cur event's detail page
+  await puppeteerUtils.goto(page, deps.curUri, deps.navSettings);
+
+  //add helpers from parsers module into page
+  await puppeteerUtils.injectHelpers(page, [parsers, domUtils], 'injectedHelpers');
+
+  const STYLEWEEKLY_CONTENT_SELECTOR : string = "#EventMetaData";
+  
+  //scrape from container element
+  [log, curEvent ] = 
+        await page.$$eval<[models.CaptureLog, models.CaptureEvent], models.CaptureEvent, models.CaptureLog, any>(
+          STYLEWEEKLY_CONTENT_SELECTOR, 
+          parseStyleWeeklyDetailPageBrowserFn, 
+          curEvent,
+          log,
+          deps);
+  } catch (e) {
+      log.errorLogs.push(`Error navigating to detail page: ${deps.curUri} : ${e.message} .`);
+  } finally {
+      return [log, curEvent ];
+  }
+
+}
+
+let parseStyleWeeklyDetailPageBrowserFn = (detailCtx, curEvent: models.CaptureEvent, log: models.CaptureLog, deps : any): [models.CaptureLog, models.CaptureEvent] => {  
+try
+{  
+  debugger;  
+  curEvent.detailPageInnerText = null;
+  curEvent.detailPageHtml = null;
+  
+  if (!detailCtx || detailCtx.length < 1) {
+    log.errorLogs.push(`Could not find Detail Container Element for page: ${deps.curUri}`);
+  }
+  else if (detailCtx.length === 1) {
+    let curCtx = detailCtx[0];
+    if (!curEvent.ticketCostRaw) {
+      let tixPriceElem = curCtx.querySelector('span.eventInfo.eventPrice');
+      if (tixPriceElem) {
+        let rawTixPriceTxt = tixPriceElem.innerText.trim();
+        curEvent.ticketCostRaw = rawTixPriceTxt;
+        curEvent.ticketCost = <models.TicketAmtInfo[]> injectedHelpers.parseTicketString(rawTixPriceTxt);
+      } else {
+        log.infoLogs.push(`No ticket info found for page: ${deps.curUri}`);
+      }
+    }
+    
+    // let fbShareElem = curCtx.querySelector('.share-events.share-plus .share-facebook a:first-child');
+    // if (fbShareElem) {
+    //   curEvent.facebookShareUri = fbShareElem.getAttribute("href");
+    // } else {
+    //   log.infoLogs.push(`No FB Share info found in .share-events.share-plus .share-facebook a:first-child for page: ${deps.curUri}`);
+    // }
+
+    // let twitterShareElem = curCtx.querySelector('.share-events.share-plus .share-twitter a:first-child');
+    // if (twitterShareElem) {
+    //   curEvent.twitterShareUri = twitterShareElem.getAttribute("href");
+    // } else {
+    //   log.infoLogs.push(`No Twitter Share info found in .share-events.share-plus .share-twitter a:first-child for page: ${deps.curUri}`);
+    // }
+    
+  } else if (detailCtx.length > 1) {
+    log.warningLogs.push(`Expected only 1 Detail Container Element, but there are ${detailCtx.length} for page: ${deps.curUri}`);
+  } 
+}
+catch(e) {
+  log.errorLogs.push(`Capture Detail Page Exception Thrown: ${e.message} at ${deps.curUri}`);
+}
+
+return [log, curEvent];
+};
 

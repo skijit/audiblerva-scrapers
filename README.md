@@ -136,7 +136,7 @@ Scrape / Capture Scripts
     - venue link/info: 
       - `[...document.querySelectorAll("div:not([class='longDescrip']).descripTxt span.locationLabel a")].forEach(x => console.log(x.innerText))`
       - `[...document.querySelectorAll("div:not([class='longDescrip']).descripTxt span.locationLabel a")].forEach(x => console.log(x.getAttribute("href")))`
-    - date/regular-event-identifier: `span.altTimeDisplay`
+    - date/regular-event-identifier: `document.querySelectorAll('span.altTimeDisplay').forEach(x => console.log(x.innerText))`
       - How to handle regular events: have a configuration variable that says how many events to generate- should be roughly equivalent to scraping interval
       - Note- On the detail page, the dates are in the past
 

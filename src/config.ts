@@ -17,7 +17,7 @@ export const CFG = {
   development: {
     debug: false,
     s3BucketName: 'musical.image-depot-1',
-    persistImagesToAws: false
+    persistImagesToAws: true
   },
   production: {
     debug: false,
@@ -223,5 +223,23 @@ export const CFG = {
       timeout: 300000,
       waitUntil: [ 'domcontentloaded', 'networkidle0']
     }
-  }
+  },
+  styleWeekly: {
+    PRIMARY_URI: "https://www.styleweekly.com/richmond/EventSearch?eventCategory=1400273&sortType=&page=",
+    DOMAIN_NAME: "www.styleweekly.com",
+    CHANNEL_NAME: "Style Weekly Website",    
+    CHANNEL_IMAGE: {
+      src : "s3.amazonaws.com/musical.image-depot-1/default-channel-images/style-weekly.png",
+      key : "default-channel-images/style-weekly.png",
+      type : "png",
+      height : 73,
+      width : 192
+    },         
+    TENANT_NAME: "UR",    
+    NAV_SETTINGS: {
+      timeout: 300000,
+      waitUntil: []
+    },
+    MAIN_EVENT_SELECTOR: "div.EventListing",    
+  },
 }
