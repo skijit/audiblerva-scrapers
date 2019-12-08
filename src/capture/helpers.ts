@@ -823,17 +823,22 @@ export const parseStyleWeeklyPageBrowserFn = (daysCtx, results, log, deps): [mod
         log.errorLogs.push(`Could not extract json+ld event data (@Type=='Event'.`);     
         continue;          
       } 
-
-      //start dates do not have timezones, so we'll take default of EST which the server is in... (lame)
+      
       if (ldEvent.startDate) {
-        event.startDt = new Date(ldEvent.startDate).toISOString();
+        // arrgghh... this is terrible fix todo
+        let sd = new Date(ldEvent.startDate);
+        sd.setHours(sd.getHours()+5);
+        event.startDt = sd.toISOString();                
       } else {
         log.errorLogs.push(`Could not extract startDt from json+ld event data (@Type=='Event'.`);     
         continue;          
       }
 
       if (ldEvent.endDate) {
-        event.endDt = new Date(ldEvent.endDate).toISOString();
+        // arrgghh... this is terrible fix todo
+        let ed = new Date(ldEvent.endDate);
+        ed.setHours(ed.getHours()+5);
+        event.endDt = ed.toISOString();                        
       } 
 
       //if start date is in the past, assume this is because it's a regularly scheduled event which is hard-noped atm
