@@ -216,12 +216,12 @@ export const CFG = {
       width : 225
     },          
     TOTAL_PAGES: 8,
-    EVENT_CONTAINER_SELECTOR: "main[data-spec='search-results']",
-    DAY_EVENT_SELECTOR: "section.eds-media-card-content:not(.eds-l-pad-all-6)",
+    EVENT_CONTAINER_SELECTOR: ".search-event-card-wrapper",
+    DAY_EVENT_SELECTOR: ".eds-event-card--consumer",
     TENANT_NAME: "UR",
     NAV_SETTINGS: {
       timeout: 300000,
-      waitUntil: [ 'domcontentloaded', 'networkidle0']
+      waitUntil: [ 'domcontentloaded', 'networkidle2' ]
     }
   },
   styleWeekly: {
