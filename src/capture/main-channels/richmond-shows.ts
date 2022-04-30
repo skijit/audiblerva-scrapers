@@ -54,7 +54,7 @@ export async function main() {
     [log, results] = await 
       page.$$eval<[models.CaptureLog, models.CaptureResults], models.CaptureResults, models.CaptureLog, any>(
         channelCfg.EVENT_CONTAINER_SELECTOR, 
-        captureHelpers.parseMainCamelPageBrowserFn,
+        captureHelpers.parseMainRichmondPageBrowserFn,
         results,
         log,
         bundledRuntimeDependencies
