@@ -257,10 +257,10 @@ let parseEventbriteDetailPageBrowserFn = (detailCtx, curEvent: models.CaptureEve
 
             //get main image
             curEvent.eventImageUris = curEvent.eventImageUris||[];
-            let mainImgEl = curCtx.querySelector('div.listing-hero picture');
+            let mainImgEl = curCtx.querySelector('div.listing-hero picture source');
             if (mainImgEl) {
                 let imgUri = "";
-                let candidateImgUri = mainImgEl.getAttribute('content').toLowerCase();
+                let candidateImgUri = mainImgEl.getAttribute('srcset').toLowerCase();
                 let isDecodableUri = candidateImgUri.match(/^http[s]?:\/\/img.evbuc.com/i);
                 if (isDecodableUri && isDecodableUri.length > 0) {
                     let decodedCandidateUri = decodeURIComponent(candidateImgUri);
@@ -283,7 +283,7 @@ let parseEventbriteDetailPageBrowserFn = (detailCtx, curEvent: models.CaptureEve
               if (!curEvent.ticketCost || curEvent.ticketCost.length ==0) {
                 curEvent.ticketCost = curEvent.ticketCost||[];
                 curEvent.ticketCostRaw = ticketPriceEl.innerText; 
-                if (curEvent.ticketCostRaw.toLowerCase().includes("free")) {
+                if (curEvent.ticketCostRaw && curEvent.ticketCostRaw.toLowerCase().includes("free")) {
                     curEvent.ticketCost.push(<models.TicketAmtInfo> { amt: 0, qualifier: "" });
                 } else {
                     curEvent.ticketCost = <models.TicketAmtInfo[]> injectedHelpers.parseTicketString(curEvent.ticketCostRaw);
@@ -346,7 +346,7 @@ let parseEventbriteDetailPageBrowserFn = (detailCtx, curEvent: models.CaptureEve
                 let desc2Elem = promoterElem.querySelector("div.js-xd-read-more-contents p");
                 if (desc2Elem)
                     p.desc += desc2Elem.innerText;
-                if (curEvent.promoters.findIndex(x => x.name.toLowerCase() != p.name.toLowerCase()))
+                if (curEvent.promoters.findIndex(x => (x.name && x.name.toLowerCase()) != (p.name && p.name.toLowerCase())))
                     curEvent.promoters.push(p);
             } else {
                 log.warningLogs.push(`Promoter info not found in detail page for: ${deps.curUri}`);

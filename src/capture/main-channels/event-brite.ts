@@ -85,7 +85,6 @@ export async function main() {
         bundledRuntimeDependencies.curUri = eventDetailUri.uri;
 
         //scrape details page
-        bundledRuntimeDependencies.curUri = eventDetailUri.uri;
         [log, curEvent] = await captureHelpers.parseEventbrite(page, curEvent, log, bundledRuntimeDependencies);
 
         //flag any events missing images
@@ -171,16 +170,13 @@ const parseMainEventBritePageBrowserFn = (daysCtx, results, log, deps): [models.
         event.eventTitle = textArray[dateIdx -1];
         
         //get uri
-        let detailLink = eventItem.querySelector('a.eds-media-card-content__action-link');
+        let detailLink = eventItem.querySelector('a.eds-event-card-content__action-link');
         if (detailLink) {
-          if (detailLink.getAttribute('target')) {  //if _blank, discard bc detail page is on another site
-            log.infoLogs.push(`Ignoring externally hosted detail page for ${workingTitle} on page ${deps.curUri}`);
-            continue;  
-          }
+          // details moved to new page
           event.eventUris.push({ uri: detailLink.getAttribute('href'), isCaptureSrc: true } as models.UriType);
           event.ticketUri =  detailLink.getAttribute('href');
         } else {
-          log.errorLogs.push(`Could not find link for ${workingTitle} using a.eds-media-card-content__action-link on page ${deps.curUri}`);
+          log.errorLogs.push(`Could not find link for ${workingTitle} using a.eds-event-card-content__action-link on page ${deps.curUri}`);
           continue;
         }
 
