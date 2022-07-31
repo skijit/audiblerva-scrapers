@@ -1,9 +1,7 @@
-import { doScreenshot } from './../core/screenshots';
 declare const injectedHelpers : any, document: any;
 
-import {puppeteer, puppeteerUtils, models, captureHelpers, parsers, domUtils } from '../barrel';
+import {puppeteer, puppeteerUtils, models, parsers, domUtils } from '../barrel';
 import { CapturePerformer } from '../core/models';
-import { runInNewContext } from 'vm';
 
 export const outputLog = (log: models.CaptureLog) => {    
     console.log(`Capture Log: tenant: ${log.tenantName}, channelName: ${log.channelName}, date: ${log.logDt}...`);
@@ -644,10 +642,10 @@ let parseRichmondShowsDetailPageBrowserFn = (detailCtx, curEvent: models.Capture
   return [log, curEvent];
 };
 
-export const parseMainCamelPageBrowserFn = (daysCtx, results, log, deps): [models.CaptureLog, models.CaptureResults] => {  
-  try {    
+export const parseMainRichmondPageBrowserFn = (daysCtx, results, log, deps): [models.CaptureLog, models.CaptureResults] => {  
+  try {
     //get each day w >= 1 event
-    for (let dayItem of daysCtx||[]) {      
+    for (let dayItem of daysCtx||[]) {     
       //get each event
       let eventsCtx = dayItem.querySelectorAll(deps.eventSelector);
       for (let eventItem of eventsCtx||[]) {
@@ -678,7 +676,6 @@ export const parseMainCamelPageBrowserFn = (daysCtx, results, log, deps): [model
         let titleSegments = [];
         let headlinersLinkCtx = eventItem.querySelectorAll("h1.headliners");
         for (let headlinerLinkItem of headlinersLinkCtx||[]) {
-          let isPrimary = headlinerLinkItem.classList.contains('summary');
           let linkElement = headlinerLinkItem.querySelector('a:first-child');
           let eventUri :models.UriType = { uri: linkElement.getAttribute("href").trim(), isCaptureSrc: true};
           if (eventUri.uri) {
@@ -756,7 +753,6 @@ export const parseMainCamelPageBrowserFn = (daysCtx, results, log, deps): [model
 
   return [log, results];
 }
-
 
 export const parseStyleWeeklyPageBrowserFn = (daysCtx, results, log, deps): [models.CaptureLog, models.CaptureResults] => {  
   try {    
@@ -1010,14 +1006,12 @@ let parseCamelOrBroadberryDetailPageBrowserFn = (detailCtx, curEvent: models.Cap
       } 
 
       if (ldEvent.startDate) {
-        console.log(`ldEvent.startDate: ${ldEvent.startDate}`);
         curEvent.startDt = new Date(ldEvent.startDate).toISOString(); 
       } else {
         throw new Error(`Could not extract startDt from json+ld event data (@Type=='Event')`);
       }
    
       if (ldEvent.endDate) {
-        console.log(`ldEvent.endDate: ${ldEvent.endDate}`);
         curEvent.endDt = new Date(ldEvent.endDate).toISOString();
       } else {
         log.warningLogs.push(`No endDt from json+ld for page: ${deps.curUri}`);
@@ -1129,8 +1123,6 @@ let parseCamelOrBroadberryDetailPageBrowserFn = (detailCtx, curEvent: models.Cap
   catch(e) {
     log.errorLogs.push(`Capture Detail Page Exception Thrown: ${e.message} at ${deps.curUri}`);
   }
-
-  console.log(`Current Event: ${JSON.stringify(curEvent)}`);
   
   return [log, curEvent];
 };
