@@ -221,7 +221,12 @@ let parseNationalDetailPageBrowserFn = (detailCtx, curEvent: models.CaptureEvent
       let startTime = startTimeElem.innerText.replace("TIME\n","").trim();
       let [rawString, timeHours, timeMin] = injectedHelpers.parseTime(startTime);
       baseDate.setHours(timeHours, timeMin);
-      curEvent.startDt = baseDate.toISOString();
+ 
+      // pull isostring pull everything before letter T
+      let dateStr = baseDate.toISOString().split("T")[0];
+      // set the corrected date with the timezone we should be in GMT-0400 aka EST
+      let correctedDate = new Date(dateStr+" "+timeHours+":"+timeMin+":00"+" "+"GMT-0400");
+      curEvent.startDt = correctedDate.toISOString();
 
       //ticket info including link
       let ticketLinkElem = curCtx.querySelector('#event_detail_header a.btn-tickets');

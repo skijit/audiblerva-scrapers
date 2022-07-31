@@ -825,20 +825,25 @@ export const parseStyleWeeklyPageBrowserFn = (daysCtx, results, log, deps): [mod
       } 
       
       if (ldEvent.startDate) {
-        // arrgghh... this is terrible fix todo
-        let sd = new Date(ldEvent.startDate);
-        sd.setHours(sd.getHours()+5);
-        event.startDt = sd.toISOString();                
+        // pull isostring pull everything before letter T
+        let dateStr = ldEvent.startDate.split("T")[0];
+        let timeStamp = ldEvent.startDate.split("T")[1].split("-")[0];
+        // set the corrected date with the timezone we should be in "America/New_York"
+        let correctedDate = new Date(dateStr+" "+timeStamp+" "+"GMT-0400");
+        event.startDt = correctedDate.toISOString();                
       } else {
         log.errorLogs.push(`Could not extract startDt from json+ld event data (@Type=='Event'.`);     
         continue;          
       }
 
       if (ldEvent.endDate) {
+        // pull isostring pull everything before letter T
+        let dateStr = ldEvent.endDate.split("T")[0];
+        let timeStamp = ldEvent.endDate.split("T")[1];
         // arrgghh... this is terrible fix todo
-        let ed = new Date(ldEvent.endDate);
-        ed.setHours(ed.getHours()+5);
-        event.endDt = ed.toISOString();                        
+        let correctedDate = new Date(dateStr+" "+timeStamp+" "+"GMT-0400");
+
+        event.endDt = correctedDate.toISOString();                        
       } 
 
       //if start date is in the past, assume this is because it's a regularly scheduled event which is hard-noped atm
@@ -954,3 +959,261 @@ catch(e) {
 return [log, curEvent];
 };
 
+export const parseCamelOrBroadberry = async(page: puppeteer.Page, curEvent:models.CaptureEvent, log: models.CaptureLog, deps: any) : Promise<[models.CaptureLog, models.CaptureEvent]> => {    
+  try {
+  //browse to the cur event's detail page
+  await puppeteerUtils.goto(page, deps.curUri, deps.navSettings);
+
+  //add helpers from parsers module into page
+  await puppeteerUtils.injectHelpers(page, [parsers, domUtils], 'injectedHelpers');
+
+  const RICHMONDSHOWS_CONTENT_SELECTOR : string = "*";
+  
+  //scrape from container element
+  [log, curEvent] = 
+        await page.$$eval<[models.CaptureLog, models.CaptureEvent], models.CaptureEvent, models.CaptureLog, any>(
+          RICHMONDSHOWS_CONTENT_SELECTOR, 
+          parseCamelOrBroadberryDetailPageBrowserFn, 
+          curEvent,
+          log,
+          deps);
+  } catch (e) {
+      log.errorLogs.push(`Error navigating to detail page: ${deps.curUri} : ${e.message} .`);
+  } finally {
+      return [log, curEvent ];
+  }
+
+}
+
+let parseCamelOrBroadberryDetailPageBrowserFn = (detailCtx, curEvent: models.CaptureEvent, log: models.CaptureLog, deps : any): [models.CaptureLog, models.CaptureEvent] => {  
+  try
+  {    
+    curEvent.detailPageInnerText = document.body.innerText;
+    curEvent.detailPageHtml = document.body.innerHTML;
+    
+    if (!detailCtx || detailCtx.length < 1) {
+      log.errorLogs.push(`Could not find Detail Container Element for page: ${deps.curUri}`);
+    }
+    else if (detailCtx.length > 0) {
+      //start with the ld+json
+      let ldSuccess = false, ldEvent:any;
+      let ld = [...document.querySelectorAll('script[type="application/ld+json"]')].map(x => JSON.parse(x.innerText)).map(x => Array.isArray(x) ? x[0] : x);
+      if (ld && ld.length > 0 ) {
+        let ldEventArray = ld.filter(x => x['@type'] == 'Event');
+        if (ldEventArray && ldEventArray.length > 0) {
+          ldEvent = ldEventArray[0];
+          ldSuccess = true;
+        } 
+      }
+      if (!ldSuccess) {
+        throw new Error(`Could not extract json+ld event data (@Type=='Event')`);
+      } 
+
+      if (ldEvent.startDate) {
+        console.log(`ldEvent.startDate: ${ldEvent.startDate}`);
+        curEvent.startDt = new Date(ldEvent.startDate).toISOString(); 
+      } else {
+        throw new Error(`Could not extract startDt from json+ld event data (@Type=='Event')`);
+      }
+   
+      if (ldEvent.endDate) {
+        console.log(`ldEvent.endDate: ${ldEvent.endDate}`);
+        curEvent.endDt = new Date(ldEvent.endDate).toISOString();
+      } else {
+        log.warningLogs.push(`No endDt from json+ld for page: ${deps.curUri}`);
+      }
+
+      if (ldEvent.image) {        
+        curEvent.eventImageUris.push(ldEvent.image);            
+      } else {
+        log.warningLogs.push(`No main image found from json+ld for page: ${deps.curUri}`);
+      }
+
+      if (ldEvent.offers && ldEvent.offers.url && !curEvent.ticketUri) {
+        curEvent.ticketUri = ldEvent.offers.url;
+      }
+
+      if (ldEvent.location && ldEvent.location.name && !curEvent.venueName) {
+        curEvent.venueName = ldEvent.location.name;
+      }
+
+      if ((!curEvent.venueAddressLines || curEvent.venueAddressLines.length === 0) && ldEvent.location && ldEvent.location["@type"]=== 'Place') {
+        curEvent.venueAddressLines.push(ldEvent.location.address as string, ldEvent.location.name as string);
+      }
+      
+      let curCtx = detailCtx[0];
+
+      //venue address/info, if exists and not already set
+      let venueElem = curCtx.querySelector('.venueLink');
+      let venueElemAttr = venueElem.getAttribute('content');
+      if (venueElemAttr) {
+        curEvent.venueAddressLines.push(venueElemAttr as string);
+      }
+
+      //start date and time
+      let startDtElem = curCtx.querySelector('.eventStDate');
+      if (startDtElem && !curEvent.startDt) {
+        let actualStartDt = new Date(startDtElem.innerText.trim());
+        if (startDtElem) {
+          curEvent.startDt = actualStartDt.toISOString();
+        } else {
+          log.errorLogs.push(`Could not find start date from .eventStDate on page: ${deps.curUri}`);
+        }
+      }
+
+      //name of main performer
+      let mainPerformer :string = '';
+      let mainPermElem = curCtx.querySelector('meta[property="og:title"]');
+      if (mainPermElem) {
+        let mainPermElemText = mainPermElem.getAttribute('content');
+        mainPerformer = mainPermElemText.trim();
+      } else {
+        log.warningLogs.push(`Expecting to find a main performer (meta[property="og:title"]) for page: ${deps.curUri}`);
+      }
+
+      //get doors
+      let doorElem = curCtx.querySelector('.eventDoorStartDate');
+      let doorElemSpan = doorElem.querySelector('span');
+      if (doorElemSpan) {
+        let doorElemSpanTxt = doorElemSpan.innerText.trim();
+        [curEvent.rawDoorTimeStr, curEvent.doorTimeHours, curEvent.doorTimeMin ] = injectedHelpers.parseTime(doorElemSpanTxt);
+      } else {
+        log.infoLogs.push(`No door info found in .eventDoorStartDate 1st child span for page: ${deps.curUri}`);
+      }
+
+      if (!curEvent.ticketCostRaw) {
+        let tixPriceElem = curCtx.querySelector('.eventCost');
+        let tixPriceElemSpan = tixPriceElem.querySelector('span');
+        if (tixPriceElemSpan) {
+          let rawTixPriceTxt = tixPriceElemSpan.innerText.trim();
+          curEvent.ticketCostRaw = rawTixPriceTxt;
+          curEvent.ticketCost = <models.TicketAmtInfo[]> injectedHelpers.parseTicketString(rawTixPriceTxt);
+        } else {
+          log.infoLogs.push(`No ticket info found in .eventCost first child span for page: ${deps.curUri}`);
+        }
+      }
+
+      let artistBoxCtx = curCtx.querySelectorAll(".singleEventDetails");
+      for (let artistBoxElem of artistBoxCtx||[]) {
+        let performerNameElem = artistBoxElem.querySelector('#eventTitle');
+        if (performerNameElem) {
+        let performerNameElemTitle = performerNameElem.getAttribute('title');
+        let curPerformer = <models.CapturePerformer> { 
+          performerName: performerNameElemTitle.trim(),
+          performerUris: [],
+          performerImageUris: []
+        };
+
+        curPerformer.isPrimaryPerformer = mainPerformer.toLowerCase()==curPerformer.performerName.toLowerCase();
+
+        //get performer bio image
+        let bioImgElem1 = artistBoxElem.querySelector('.eventImgBox');
+        let bioImgElem1Img = bioImgElem1.querySelector('img');
+        let bioImgElem = bioImgElem1Img;
+        if (bioImgElem) {
+          curPerformer.performerImageUris.push(bioImgElem.getAttribute("src"));
+        } else {
+          log.infoLogs.push(`No Performer image found in .eventImgBox first child img for ${curPerformer.performerName} for page: ${deps.curUri}`);
+        }
+
+        curEvent.performers.push(curPerformer);
+        } else {
+        log.warningLogs.push(`No Performer Name in page: ${deps.curUri}`);
+        }
+      }
+
+    } else if (detailCtx.length > 1) {
+      log.warningLogs.push(`Expected only 1 Detail Container Element, but there are ${detailCtx.length} for page: ${deps.curUri}`);
+    } 
+  }
+  catch(e) {
+    log.errorLogs.push(`Capture Detail Page Exception Thrown: ${e.message} at ${deps.curUri}`);
+  }
+
+  console.log(`Current Event: ${JSON.stringify(curEvent)}`);
+  
+  return [log, curEvent];
+};
+
+export const parseMainCamelOrBroadberryPgBrwserFn = (daysCtx, results, log, deps): [models.CaptureLog, models.CaptureResults] => {  
+  try {    
+    //get each day w >= 1 event
+    var x = 0;
+    for (let dayItem of daysCtx||[]) {      
+      //get each event
+      let eventsCtx = dayItem.querySelectorAll(deps.eventSelector);
+      for (let eventItem of eventsCtx||[]) {
+        let event = <models.CaptureEvent> {
+          tenantName: deps.channelCfg.TENANT_NAME,
+          channelName: deps.channelCfg.CHANNEL_NAME,
+          channelImage: deps.channelCfg.CHANNEL_IMAGE,
+          channelBaseUri: deps.channelCfg.PRIMARY_URI,
+          venueName: deps.channelCfg.VENUE_NAME,
+          performers: [] as models.CapturePerformer[],
+          eventImageUris: [] as string[],
+          eventUris: [] as models.UriType[],
+          miscDetail: [] as string[],
+          unparsedDetail: [] as string[],
+          ticketCost: [] as models.TicketAmtInfo[],
+          venueAddressLines: deps.channelCfg.VENUE_ADDRESS ? deps.channelCfg.VENUE_ADDRESS : [],
+          venueContactInfo: deps.channelCfg.VENUE_PHONENUM ? [ { item: deps.channelCfg.VENUE_PHONENUM, itemType: deps.CONTACT_ITEM_TYPES.PHONE }] : [],
+          eventContactInfo: [] as models.ContactInfoItem[],
+          minAge: null,
+          rawDoorTimeStr: null,
+          doorTimeHours: null,
+          doorTimeMin: null,
+          promoters: [] as models.PromoterInfo[],
+          neighborhood: deps.neighborhood       
+        };
+        
+        //get headliners
+        let titleSegments = [];
+        let headlinersLinkCtx = eventItem.querySelectorAll(".rhp-event-thumb");
+        for (let headlinerLinkItem of headlinersLinkCtx||[]) {
+          let linkElement = headlinerLinkItem.querySelector('a:first-child');
+          let eventUri :models.UriType = { uri: linkElement.getAttribute("href").trim(), isCaptureSrc: true};
+          let performerName = linkElement.getAttribute("title").trim()
+          let testExist = (el:models.CapturePerformer)=> el.performerName==performerName;
+          
+          if (event.eventUris.map(x => x.uri).indexOf(eventUri.uri) === -1) {
+            event.eventUris.push(eventUri);
+          }              
+          if (titleSegments.findIndex(testExist) === -1) {
+            titleSegments.push(performerName);
+          }
+        }
+
+        event.eventTitle = titleSegments.join(" / ");
+
+        //ticket link
+        let ticketsLink = eventItem.querySelector(".rhp-event-cta");
+        let ticketsA = ticketsLink.querySelector('a:first-child');
+        if (ticketsA) {
+          event.ticketUri = ticketsA.getAttribute("href").trim();
+          if (event.eventUris.map(x => x.uri).indexOf(event.ticketUri) === -1) {
+            event.eventUris.push({ uri: event.ticketUri, isCaptureSrc: false});
+          }
+        } 
+        try{
+          let ticketCost = eventItem.querySelector(".eventCost");  
+          let ticketCostSpan = ticketCost.querySelector("span");
+          let ticketCostText = ticketCostSpan.innerText.trim();
+          event.ticketCostRaw = ticketCostText;
+          ticketCostText = ticketCostText.replace("$", "");
+          let ticketCostNum = parseInt(ticketCostText);
+          event.ticketCost.push(<models.TicketAmtInfo> { amt: ticketCostNum, qualifier: "" });
+        }catch(e) { 
+          event.ticketCostRaw = "Free";
+          event.ticketCost.push(<models.TicketAmtInfo> { amt: 0, qualifier: "" });
+        } 
+
+        results.events.push(event);
+      } //event loop
+    } //day loop
+  }
+  catch(e) {
+    log.errorLogs.push(`Capture Main Page Exception Thrown: ${e.message}`);
+  }
+
+  return [log, results];
+}
