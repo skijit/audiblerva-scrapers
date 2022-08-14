@@ -821,20 +821,25 @@ export const parseStyleWeeklyPageBrowserFn = (daysCtx, results, log, deps): [mod
       } 
       
       if (ldEvent.startDate) {
-        // arrgghh... this is terrible fix todo
-        let sd = new Date(ldEvent.startDate);
-        sd.setHours(sd.getHours()+5);
-        event.startDt = sd.toISOString();                
+        // pull isostring pull everything before letter T
+        let dateStr = ldEvent.startDate.split("T")[0];
+        let timeStamp = ldEvent.startDate.split("T")[1].split("-")[0];
+        // set the corrected date with the timezone we should be in "America/New_York"
+        let correctedDate = new Date(dateStr+" "+timeStamp+" "+"GMT-0400");
+        event.startDt = correctedDate.toISOString();                
       } else {
         log.errorLogs.push(`Could not extract startDt from json+ld event data (@Type=='Event'.`);     
         continue;          
       }
 
       if (ldEvent.endDate) {
+        // pull isostring pull everything before letter T
+        let dateStr = ldEvent.endDate.split("T")[0];
+        let timeStamp = ldEvent.endDate.split("T")[1];
         // arrgghh... this is terrible fix todo
-        let ed = new Date(ldEvent.endDate);
-        ed.setHours(ed.getHours()+5);
-        event.endDt = ed.toISOString();                        
+        let correctedDate = new Date(dateStr+" "+timeStamp+" "+"GMT-0400");
+
+        event.endDt = correctedDate.toISOString();                        
       } 
 
       //if start date is in the past, assume this is because it's a regularly scheduled event which is hard-noped atm
