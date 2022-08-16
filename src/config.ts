@@ -243,4 +243,29 @@ export const CFG = {
     },
     MAIN_EVENT_SELECTOR: "div.EventListing",    
   },
+  canalClub: {
+    PRIMARY_URI: "https://thecanalclub.com/",
+    DOMAIN_NAME: "https://thecanalclub.com/",
+    CHANNEL_NAME: "The Canal Club Website",    
+    CHANNEL_IMAGE: {
+      src : "s3.amazonaws.com/musical.image-depot-1/default-channel-images/canal-club.png",
+      key : "default-channel-images/canal-club.png",
+      type : "png",
+      height : 187,
+      width : 300
+    },         
+    TENANT_NAME: "UR",
+    DAY_EVENT_SELECTOR : "#seetickets",
+    MAIN_PAGE_EVENT_SELECTOR: ".container > article",
+    DETAIL_CONTENT_SELECTOR : "#container",
+    VENUE_ADDRESS: ["1545 East Cary Street", "Richmond, VA 23219"],
+    VENUE_PHONENUM: "804-643-2582",
+    COORDINATES: [37.5324405683702, -77.42961121439001], //lng,lat
+    NAV_SETTINGS: {
+      timeout: 300000,
+      waitUntil: []
+    },
+    NEIGHBORHOOD: NEIGHBORHOODS.SHOCKOE_BOTTOM,
+    VENUE_NAME: 'The Canal Club'
+  },
 }
