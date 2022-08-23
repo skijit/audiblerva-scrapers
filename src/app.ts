@@ -8,6 +8,7 @@ import * as rs from "./capture/main-channels/richmond-symphony";
 import * as rvas from "./capture/main-channels/richmond-shows";
 import * as eb from "./capture/main-channels/event-brite";
 import * as sw from "./capture/main-channels/style-weekly";
+import * as cc from "./capture/main-channels/canal-club";
 
 (async () => {
     let runAll : boolean = process.argv.length <= 2;
@@ -61,6 +62,11 @@ import * as sw from "./capture/main-channels/style-weekly";
     if (evalRun(eb.CAPTURE_KEY)) {
       await eb.main()
       console.log('i finished event brite');
+    }
+
+    if (evalRun(cc.CAPTURE_KEY)) {
+      await cc.main()
+      console.log('i finished the canal club');
     } 
     
     process.exit(0);
